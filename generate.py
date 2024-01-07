@@ -144,9 +144,8 @@ class CrosswordGenerator:
             letter_in_word = [i for i, letter in enumerate(word) if letter == position_letter]
 
             for i in letter_in_word:
-                start_position = position
                 if direction: # if the existing word was placed horizontally, we want our new word to be placed vertically
-                    start_position[0] -= i
+                    start_position = (position[0] - i, position[1], position[2])
                     if start_position[0] < 0:
                         continue
                     for j in range(len(word) + 1):
@@ -155,7 +154,7 @@ class CrosswordGenerator:
                         elif start_position[0] + j >= self.grid_size or (grid[start_position[0] + j][start_position[1]] != "#" and word[j] != grid[start_position[0] + j][start_position[1]]):
                             break
                 else:
-                    start_position[1] -= i
+                    start_position = (position[0], position[1] - i, position[2])
                     if start_position[1] < 0:
                         continue
                     for j in range(len(word) + 1):
@@ -209,11 +208,10 @@ class CrosswordGenerator:
                 start_position = words_used[existing_word]
                 for i in range(len(existing_word)):
                     # get current position, if horizontal we add to start col else we add to start row
-                    curr_position = start_position
                     if start_position[2]:
-                        curr_position[1] += i 
+                        curr_position = (start_position[0], start_position[1] + i, start_position[2])
                     else:
-                         curr_position[0] += i
+                        curr_position = (start_position[0] + i, start_position[1], start_position[2])
                 
                     # if potential position is found, score and add to potential_positions
                     valid_position = get_valid_position(word, curr_position)
@@ -248,6 +246,16 @@ class CrosswordGenerator:
         """
         Print the top num_crosswords crosswords based on score.
         """
-        for crossword in self.crosswords[:num_crosswords]:
+        if not self.crosswords:
+            print("No crosswords generated.")
+            return
+
+        sorted_crosswords = sorted(self.crosswords, key=lambda crossword: crossword.score, reverse=True)
+
+        print(f"Printing top {num_crosswords} crosswords:")
+        for i, crossword in enumerate(sorted_crosswords[:num_crosswords], 1):
+            print(f"Crossword #{i}, Score: {crossword.score}")
             crossword.print_crossword()
-            print(" ")
+            print("\n" + "-" * 20 + "\n")
+
+
