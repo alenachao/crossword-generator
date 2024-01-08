@@ -1,61 +1,5 @@
 import random
-
-class Crossword:
-    """
-    One possible crossword puzzle from a list of words.
-
-    Instance Variables:
-    grid (list(list(str))): the grid containing the positioned words and empty spaces
-    words_used (dict(str:tuple(int,int,bool))): words successfully placed in grid with their position
-    words_unused (list(str)): words that were not used in the grid
-    score (int): a measure on how "good" the crossword is
-    """
-
-    def __init__(self, grid, words_used, words_unused):
-        self.grid = grid
-        self.words_used = words_used
-        self.words_unused = words_unused
-        self.score = score_crossword()
-
-        def score_crossword():
-            """
-            Returns how "good" the crossword is based on the following parameters:
-                - Number of words placed (more is better)
-                - Grid size actually used (less is better)
-                - Ratio between height and width (close to 1 is better)
-            """
-            left = min(words_used.values(), key=lambda p: p[1])[1]
-            right = max((p[1] + len(w) if p[2] else p[1] for w, p in words_used.items()))
-            top = min(words_used.values(), key=lambda p: p[0])[0]
-            bottom = max((p[0] if p[2] else p[0] + len(w) for w, p in words_used.items()))
-            height = bottom - top
-            width = right - left
-
-            grid_score = height*width
-
-            # get ratio_score
-            ratio = height / width
-            diff_from_one = abs(ratio - 1)
-
-            if diff_from_one == 0:
-                ratio_score = grid_score
-            else:
-                # calculate the score based on the reciprocal of the absolute difference
-                ratio_score = 1 / diff_from_one
-
-            return ratio_score - grid_score + len(words_used.keys())
-
-
-    def print_crossword(self):
-        """
-        Print the grid, list of words used, lists of words unused, and score of the crossword
-        """
-        print(f'Crossword with a score of {self.score}. n/
-              Words used: {self.words_used.keys()} n/
-              Words unused: {self.words_unused}')
-        
-        for row in self.grid:
-            print(' '.join(row))
+from classes.Crossword import Crossword
 
 class CrosswordGenerator:
     """
@@ -71,9 +15,9 @@ class CrosswordGenerator:
         self.word_list = word_list
         self.crosswords = []
 
-    def generate_crossword(self):
+    def generate_crossword(self, words):
         """
-        Generate a possible crossword puzzle with at least 3 words.
+        Generate a possible crossword puzzle.
         """
         # helper functions
         def score_position(word, position):
@@ -98,7 +42,6 @@ class CrosswordGenerator:
                 # if there's a letter on one side then that's a corner, if there are letters on both sides thats a cross (cross is better)
                 overlap_score = 0
                 for i in range(len(word)):
-                    curr_position = grid[r][c + i]
                     if r > 0 and grid[r - 1][c + i] != "#":
                         overlap_score += 1
                     if r < self.grid_size - 1 and grid[r + 1][c + i] != "#":
@@ -145,8 +88,8 @@ class CrosswordGenerator:
 
             for i in letter_in_word:
                 if direction: # if the existing word was placed horizontally, we want our new word to be placed vertically
-                    start_position = (position[0] - i, position[1], position[2])
-                    if start_position[0] < 0:
+                    start_position = (position[0] - i, position[1], not position[2])
+                    if start_position[0] < 0 or position[0] + len(word) > self.grid_size:
                         continue
                     for j in range(len(word) + 1):
                         if j == len(word):
@@ -154,8 +97,8 @@ class CrosswordGenerator:
                         elif start_position[0] + j >= self.grid_size or (grid[start_position[0] + j][start_position[1]] != "#" and word[j] != grid[start_position[0] + j][start_position[1]]):
                             break
                 else:
-                    start_position = (position[0], position[1] - i, position[2])
-                    if start_position[1] < 0:
+                    start_position = (position[0], position[1] - i, not position[2])
+                    if start_position[1] < 0 or position[1] + len(word) > self.grid_size:
                         continue
                     for j in range(len(word) + 1):
                         if j == len(word):
@@ -186,7 +129,7 @@ class CrosswordGenerator:
         grid = [['#' for _ in range(self.grid_size)] for _ in range(self.grid_size)] # list(str) where each space is either # (empty space) or letter
         
         # place first word horizontally on the center of the grid
-        first_word = self.words_list[0]
+        first_word = words[0]
         r = self.grid_size // 2
         try:
             c = (self.grid_size // 2) -  (len(first_word) // 2)
@@ -198,7 +141,7 @@ class CrosswordGenerator:
         words_used[first_word] = position
 
         # try to place the rest of the words
-        for word in self.words_list[1:]:
+        for word in words[1:]:
 
             potential_positions = {} # { score (int): position (tuple) } where position is (r, c, true if horizontal and false otherwise)
             # note: duplicate scores are okay since we simply care bout the best score, this makes it a bit nicer to grab best position
