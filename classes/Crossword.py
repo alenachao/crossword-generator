@@ -44,16 +44,16 @@ class Crossword:
         self.words_unused = words_unused
         self.score = score_crossword()
 
-        
-
-
     def print_crossword(self):
         """
         Print the grid, list of words used, lists of words unused, and score of the crossword
         """
-        print(f'''Crossword with a score of {self.score}
+        print(f'''Score: {self.score}
 Words used: {[word for word in self.words_used.keys()]}
 Words unused: {self.words_unused}''')
         
         for row in self.grid:
             print(' '.join(row))
+
+    def get_grid(self):
+        return self.grid

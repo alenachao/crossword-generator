@@ -68,7 +68,7 @@ class CrosswordGenerator:
                     if c < self.grid_size - 1 and grid[r + i][c + 1] != "#":
                         overlap_score += 1
 
-                return overlap_score - grid_score
+                return overlap_score - grid_score + len(words_used) - len(words_unused)
 
 
         def get_valid_position(word, position):
@@ -94,7 +94,7 @@ class CrosswordGenerator:
                     for j in range(len(word) + 1):
                         if j == len(word):
                             return start_position
-                        elif start_position[0] + j >= self.grid_size or (grid[start_position[0] + j][start_position[1]] != "#" and word[j] != grid[start_position[0] + j][start_position[1]]):
+                        elif start_position[0] + j > self.grid_size or (grid[start_position[0] + j][start_position[1]] != "#" and word[j] != grid[start_position[0] + j][start_position[1]]):
                             break
                 else:
                     start_position = (position[0], position[1] - i, not position[2])
@@ -103,7 +103,7 @@ class CrosswordGenerator:
                     for j in range(len(word) + 1):
                         if j == len(word):
                             return start_position
-                        elif start_position[1] + j >= self.grid_size or (grid[start_position[0]][start_position[1] + j] != "#" and word[j] != grid[start_position[0]][start_position[1] + j]):
+                        elif start_position[1] + j > self.grid_size or (grid[start_position[0]][start_position[1] + j] != "#" and word[j] != grid[start_position[0]][start_position[1] + j]):
                             break
 
         def insert_word(word, position):
@@ -197,8 +197,11 @@ class CrosswordGenerator:
 
         print(f"Printing top {num_crosswords} crosswords:")
         for i, crossword in enumerate(sorted_crosswords[:num_crosswords], 1):
-            print(f"Crossword #{i}, Score: {crossword.score}")
+            print(f"Crossword #{i}")
             crossword.print_crossword()
             print("\n" + "-" * 20 + "\n")
+
+    def get_crosswords(self):
+        return self.crosswords
 
 
