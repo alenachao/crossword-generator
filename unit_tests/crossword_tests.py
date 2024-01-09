@@ -1,5 +1,5 @@
 import unittest
-from classes.Crossword import Crossword
+from generator_classes.Crossword import Crossword
 import io
 from unittest.mock import patch
 

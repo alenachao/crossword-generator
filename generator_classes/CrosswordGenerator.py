@@ -1,5 +1,5 @@
 import random
-from classes.Crossword import Crossword
+from generator_classes.Crossword import Crossword
 
 class CrosswordGenerator:
     """

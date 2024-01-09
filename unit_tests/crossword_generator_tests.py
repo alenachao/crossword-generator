@@ -1,5 +1,5 @@
 import unittest
-from classes.CrosswordGenerator import CrosswordGenerator
+from generator_classes.CrosswordGenerator import CrosswordGenerator
 
 class TestCrosswordGenerator(unittest.TestCase):
     def test_generate_crosswords(self):
