@@ -40,13 +40,16 @@ class MainFrame:
         self.current_frame = PickingCrossword(self.inner, self.switch_frames)
 
     def switch_frames(self, generated_crossword=None):
-        self.current_frame.master.destroy()
+        for widget in self.current_frame.master.winfo_children():
+            widget.destroy()
+        self.current_frame.master.pack_forget()
 
         if isinstance(self.current_frame, PickingCrossword):
             self.current_frame = PlayingCrossword(self.master, self.switch_frames, generated_crossword)
         else:
             self.current_frame = PickingCrossword(self.master, self.switch_frames)
 
+        self.current_frame.master.pack()
     def __getattr__(self, item):
         if item in self.outer_attr:
             # geometry attributes etc (eg pack, destroy, tkraise) are passed on to self.outer

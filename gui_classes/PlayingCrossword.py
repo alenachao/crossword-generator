@@ -60,5 +60,16 @@ class PlayingCrossword:
                     print(self.user_entries[i][j].get())
                     messagebox.showinfo("Try Again", "Incorrect entries. Keep trying!")
                     return        
-        messagebox.showinfo("Congratulations", "You Win!")
+        
+        # Create a custom congratulations window
+        congrats_window = tk.Toplevel(self.master)
+        congrats_window.title("Congratulations!")
+        
+        # Add a label
+        congrats_label = tk.Label(congrats_window, text="You Win!")
+        congrats_label.pack(pady=10)
+        
+        # Add a button to go back to the home screen
+        home_button = tk.Button(congrats_window, text="Go to Home Screen", command=self.switch_frames)
+        home_button.pack(pady=10)
             
