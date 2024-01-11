@@ -1,5 +1,6 @@
 import random
 from generator_classes.Crossword import Crossword
+from generator_classes.Word import Word
 
 class CrosswordGenerator:
     """
@@ -10,8 +11,9 @@ class CrosswordGenerator:
     word_list (list(str)): list of available words to use
     num_return (int): how many top crossword boards to return
     """
-    def __init__(self, grid_size, word_list):
-        self.grid_size = grid_size
+    def __init__(self, word_list):
+
+        self.grid_size = max([len(word) for word in word_list]) + 5
         self.word_list = word_list
         self.crosswords = []
 
@@ -20,28 +22,28 @@ class CrosswordGenerator:
         Generate a possible crossword puzzle.
         """
         # helper functions
-        def score_position(word, position):
+        def score_position(word):
             """
             Returns how "good" the word position is based on the following parameters:
                 - How much it increases the grid size (less is better)
                 - How many already placed words it overlaps with (more is better)
             """
             
-            if position[2]:
+            if word.get_hor():
                 # get grid score
                 # if horizontal we only care abt left and right 
-                left = min(words_used.values(), key=lambda p: p[1])[1]
-                right = max((p[1] + len(w) if p[2] else p[1] for w, p in words_used.items()))
+                left = min([w.get_col() for w in words_used])
+                right = max([w.get_col() + len(w.get_word()) if w.get_hor() else w.get_col() for w in words_used ])
 
-                grid_score_left = min(position[1] - left, 0)
-                grid_score_right = max(position[1] - right, 0)
+                grid_score_left = min(word.get_col() - left, 0)
+                grid_score_right = max((word.get_col() + len(word.get_word())) - right, 0)
 
                 grid_score = grid_score_left + grid_score_right
 
                 # get overlap score: we go along the adjacent tiles of the word. 
                 # if there's a letter on one side then that's a corner, if there are letters on both sides thats a cross (cross is better)
                 overlap_score = 0
-                for i in range(len(word)):
+                for i in range(len(word.get_word())):
                     if r > 0 and grid[r - 1][c + i] != "#":
                         overlap_score += 1
                     if r < self.grid_size - 1 and grid[r + 1][c + i] != "#":
@@ -51,18 +53,18 @@ class CrosswordGenerator:
             else:
                 # get grid score
                 # if vertical we only care abt up and down
-                top = min(words_used.values(), key=lambda p: p[0])[0]
-                bottom = max((p[0] if p[2] else p[0] + len(w) for w, p in words_used.items()))
+                top = min([w.get_row() for w in words_used])
+                bottom = max([w.get_row() + len(w.get_word()) if not w.get_hor() else w.get_row() for w in words_used])
 
-                grid_score_top = min(position[0] - top, 0)
-                grid_score_bottom = max(position[0] - bottom, 0)
+                grid_score_top = min(word.get_row() - top, 0)
+                grid_score_bottom = max((word.get_row() + len(word.get_word())) - bottom, 0)
 
                 grid_score = grid_score_top + grid_score_bottom
 
                 # get overlap score: we go along the adjacent tiles of the word. 
                 # if there's a letter on one side then that's a corner, if there are letters on both sides thats a cross (cross is better)
                 overlap_score = 0
-                for i in range(len(word)):
+                for i in range(len(word.get_word())):
                     if c > 0 and grid[r + i][c - 1] != "#":
                         overlap_score += 1
                     if c < self.grid_size - 1 and grid[r + i][c + 1] != "#":
@@ -71,95 +73,89 @@ class CrosswordGenerator:
                 return overlap_score - grid_score + len(words_used) - len(words_unused)
 
 
-        def get_valid_position(word, position):
+        def get_valid_position(word):
             """
             Returns a valid position we could place the word, if none then return None. 
             Note this is not the same as curr_position since any letter in word can match with the letter at curr_position.
+            Note that the direction is the direction of the word we are placing which is perpendicular to the existing word.
             A valid position is one where:
                 - for any overlaps, letter of word and letter already placed must match
                 - the word does not go off the grid
+                - there are no adjacent letters unless it is an overlap
             """
-            position_row = position[0]
-            position_col = position[1]
-            direction = position[2]
-
-            position_letter = grid[position_row][position_col]
-            letter_in_word = [i for i, letter in enumerate(word) if letter == position_letter]
+            position_letter = grid[word.get_row()][word.get_col()]
+            letter_in_word = [i for i, letter in enumerate(word.get_word()) if letter == position_letter]
 
             for i in letter_in_word:
-                if direction: # if the existing word was placed horizontally, we want our new word to be placed vertically
-                    start_position = (position[0] - i, position[1], not position[2])
-                    if start_position[0] < 0 or position[0] + len(word) > self.grid_size:
+                if word.get_hor(): # if word is going to be placed horizontally
+                    start_position = Word(word.get_word(), word.get_row(), word.get_col() - i, word.get_hor())
+                    if start_position.get_col() < 0 or start_position.get_col() + len(word.get_word()) > self.grid_size:
                         continue
-                    for j in range(len(word) + 1):
-                        if j == len(word):
+                    for j in range(len(word.get_word()) + 1):
+                        if j == len(word.get_word()):
                             return start_position
-                        elif start_position[0] + j > self.grid_size or (grid[start_position[0] + j][start_position[1]] != "#" and word[j] != grid[start_position[0] + j][start_position[1]]):
+                        elif (grid[start_position.get_row()][start_position.get_col() + j] != "#" and word.get_word()[j] != grid[start_position.get_row()][start_position.get_col() + j]) or \
+                            ((grid[start_position.get_row()][start_position.get_col() + j] == "#") and \
+                            ((start_position.get_row() > 0 and grid[start_position.get_row() - 1][start_position.get_col() + j] != "#" ) or \
+                            (start_position.get_row() < self.grid_size - 1 and grid[start_position.get_row() + 1][start_position.get_col() + j] != "#" ))):
                             break
                 else:
-                    start_position = (position[0], position[1] - i, not position[2])
-                    if start_position[1] < 0 or position[1] + len(word) > self.grid_size:
+                    start_position = Word(word.get_word(), word.get_row() - i, word.get_col(), word.get_hor())
+                    if start_position.get_row() < 0 or start_position.get_row() + len(word.get_word()) > self.grid_size:
                         continue
-                    for j in range(len(word) + 1):
-                        if j == len(word):
+                    for j in range(len(word.get_word()) + 1):
+                        if j == len(word.get_word()):
                             return start_position
-                        elif start_position[1] + j > self.grid_size or (grid[start_position[0]][start_position[1] + j] != "#" and word[j] != grid[start_position[0]][start_position[1] + j]):
+                        elif (grid[start_position.get_row() + j][start_position.get_col()] != "#" and word.get_word()[j] != grid[start_position.get_row() + j][start_position.get_col()]) or \
+                            ((grid[start_position.get_row() + j][start_position.get_col()] == "#") and \
+                            ((start_position.get_col() > 0 and grid[start_position.get_row() + j][start_position.get_col() - 1] != "#" ) or \
+                            (start_position.get_col() < self.grid_size - 1 and grid[start_position.get_row() + j][start_position.get_col() + 1] != "#" ))):
                             break
+                    
 
-        def insert_word(word, position):
+        def insert_word(word):
             """
             Place word onto grid.
             """
-            r = position[0]
-            c = position[1]
-            direction = position[2]
-
-            if direction:
-                for i in range(len(word)):
-                    grid[r][c + i] = word[i]
+            if word.get_hor():
+                for i in range(len(word.get_word())):
+                    grid[word.get_row()][word.get_col() + i] = word.get_word()[i]
             else:
-                for i in range(len(word)):
-                    grid[r + i][c] = word[i]
+                for i in range(len(word.get_word())):
+                    grid[word.get_row() + i][word.get_col()] = word.get_word()[i]
 
         # keep track of words
-        words_used = {} # { word (str): position (tuple) } where position is (r, c, true if horizontal and false otherwise)
+        words_used = [] # list(Word)
         words_unused = [] # list(str)
         
         # initialize grid
         grid = [['#' for _ in range(self.grid_size)] for _ in range(self.grid_size)] # list(str) where each space is either # (empty space) or letter
         
         # place first word horizontally on the center of the grid
-        first_word = words[0]
         r = self.grid_size // 2
-        try:
-            c = (self.grid_size // 2) -  (len(first_word) // 2)
-        except c < 0:
-            raise "grid_size needs to be larger than all words available"
-        
-        position = (r, c, True)
-        insert_word(first_word, position)
-        words_used[first_word] = position
+        c = (self.grid_size // 2) -  (len(words[0]) // 2)
+        first_word = Word(words[0], r, c, True)
+        insert_word(first_word)
+        words_used.append(first_word)
 
         # try to place the rest of the words
         for word in words[1:]:
-
-            potential_positions = {} # { score (int): position (tuple) } where position is (r, c, true if horizontal and false otherwise)
+            potential_positions = {} # { score (int): word (Word) } where position is (r, c, true if horizontal and false otherwise)
             # note: duplicate scores are okay since we simply care bout the best score, this makes it a bit nicer to grab best position
 
             # find potential positions
             for existing_word in words_used:
-                start_position = words_used[existing_word]
-                for i in range(len(existing_word)):
-                    # get current position, if horizontal we add to start col else we add to start row
-                    if start_position[2]:
-                        curr_position = (start_position[0], start_position[1] + i, start_position[2])
+                for i in range(len(existing_word.get_word())):
+                    # create our potential positions
+                    if existing_word.get_hor():
+                        curr_position = Word(word, existing_word.get_row(), existing_word.get_col() + i, False)
                     else:
-                        curr_position = (start_position[0] + i, start_position[1], start_position[2])
+                        curr_position = Word(word, existing_word.get_row() + i, existing_word.get_col(), True)
                 
                     # if potential position is found, score and add to potential_positions
-                    valid_position = get_valid_position(word, curr_position)
+                    valid_position = get_valid_position(curr_position)
                     if valid_position:
-                        potential_positions[score_position(word, valid_position)] = valid_position
+                        potential_positions[score_position(valid_position)] = valid_position
 
             if not potential_positions:
                 words_unused.append(word)
@@ -167,8 +163,8 @@ class CrosswordGenerator:
                 # find best position and add to words_used and grid
                 best_score = max(potential_positions.keys())
                 best_position = potential_positions[best_score]
-                insert_word(word, best_position)
-                words_used[word] = best_position
+                insert_word(best_position)
+                words_used.append(best_position)
 
         return Crossword(grid, words_used, words_unused)
 
@@ -185,23 +181,26 @@ class CrosswordGenerator:
 
         self.crosswords = crosswords
 
-    def print_crosswords(self, num_crosswords):
+    def print_crosswords(self):
         """
-        Print the top num_crosswords crosswords based on score.
+        Print crosswords sorted by score.
         """
         if not self.crosswords:
             print("No crosswords generated.")
             return
 
-        sorted_crosswords = sorted(self.crosswords, key=lambda crossword: crossword.score, reverse=True)
+        sorted_crosswords = sorted(self.crosswords, key=lambda crossword: crossword.get_score(), reverse=True)
 
-        print(f"Printing top {num_crosswords} crosswords:")
-        for i, crossword in enumerate(sorted_crosswords[:num_crosswords], 1):
-            print(f"Crossword #{i}")
+        for i, crossword in enumerate(sorted_crosswords, 1):
+            print(f"Crossword #{i} with a score of {crossword.get_score()}")
             crossword.print_crossword()
             print("\n" + "-" * 20 + "\n")
 
     def get_crosswords(self):
         return self.crosswords
-
-
+    
+    def get_grid_size(self):
+        return self.grid_size
+    
+    def get_word_list(self):
+        return self.word_list

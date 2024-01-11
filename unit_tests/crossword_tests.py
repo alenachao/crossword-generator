@@ -1,5 +1,6 @@
 import unittest
 from generator_classes.Crossword import Crossword
+from generator_classes.Word import Word
 import io
 from unittest.mock import patch
 
@@ -10,7 +11,7 @@ class TestCrossword(unittest.TestCase):
                 ['#', '#', 'l', '#', '#'],
                 ['#', '#', 'l', '#', '#'],
                 ['#', '#', 'o', '#', '#']]
-        words_used = {'hello': (0, 2, True)}
+        words_used = [Word('hello', 0, 2, True)]
         words_unused = ['world']
 
         self.sample_crossword = Crossword(grid, words_used, words_unused)
@@ -26,7 +27,7 @@ class TestCrossword(unittest.TestCase):
             self.sample_crossword.print_crossword()
             output = mock_stdout.getvalue().strip()
 
-        expected_output = """Crossword with a score of 2.0
+        expected_output = """Score: 2.0
 Words used: ['hello']
 Words unused: ['world']
 # # h # #

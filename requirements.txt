@@ -1,1 +1,6 @@
-tk==0.1.0
+tk==0.1.0certifi @ file:///C:/ci/certifi_1655907258560/work/certifi
+charset-normalizer==3.3.2
+idna==3.6
+requests==2.31.0
+urllib3==2.1.0
+wincertstore==0.2
