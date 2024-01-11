@@ -20,6 +20,9 @@ class PlayingCrossword:
         solution.add_clues()
         self.create_crossword_board()
         self.display_clues()
+    
+    def validate_entry(self, new_text):
+        return len(new_text) <= 1
 
     def create_crossword_board(self):
         # create board
@@ -31,7 +34,7 @@ class PlayingCrossword:
                 if cell == "#":
                     self.canvas.create_rectangle(x, y, x + self.cell_size, y + self.cell_size, outline="black", fill='black')
                 else:
-                    entry = tk.Entry(self.master, width=2, justify='center', font=('Arial', 16))
+                    entry = tk.Entry(self.master, width=2, justify='center', font=('Arial', 16), validate="key", validatecommand=(self.master.register(self.validate_entry), "%P"))
                     self.user_entries[i][j] = entry
                     entry_id = self.canvas.create_window(x, y, window=entry, anchor='nw')
 
